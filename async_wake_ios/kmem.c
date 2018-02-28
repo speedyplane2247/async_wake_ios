@@ -54,17 +54,17 @@ void prepare_rk_via_kmem_read_port(mach_port_t port) {
   kmem_read_port = port;
 }
 
-mach_port_t tfp0 = MACH_PORT_NULL;
-void prepare_rwk_via_tfp0(mach_port_t port) {
-  tfp0 = port;
+mach_port_t tfp69 = MACH_PORT_NULL;
+void prepare_rwk_via_tfp69(mach_port_t port) {
+  tfp69 = port;
 }
 
 int have_kmem_read() {
-  return (kmem_read_port != MACH_PORT_NULL) || (tfp0 != MACH_PORT_NULL);
+  return (kmem_read_port != MACH_PORT_NULL) || (tfp69 != MACH_PORT_NULL);
 }
 
 int have_kmem_write() {
-  return (tfp0 != MACH_PORT_NULL);
+  return (tfp69 != MACH_PORT_NULL);
 }
 
 uint32_t rk32_via_kmem_read_port(uint64_t kaddr) {
@@ -95,23 +95,23 @@ uint32_t rk32_via_kmem_read_port(uint64_t kaddr) {
   return val;
 }
 
-uint32_t rk32_via_tfp0(uint64_t kaddr) {
+uint32_t rk32_via_tfp69(uint64_t kaddr) {
   kern_return_t err;
   uint32_t val = 0;
   mach_vm_size_t outsize = 0;
-  err = mach_vm_read_overwrite(tfp0,
+  err = mach_vm_read_overwrite(tfp69,
                                (mach_vm_address_t)kaddr,
                                (mach_vm_size_t)sizeof(uint32_t),
                                (mach_vm_address_t)&val,
                                &outsize);
   if (err != KERN_SUCCESS){
-    printf("tfp0 read failed %s addr: 0x%llx err:%x port:%x\n", mach_error_string(err), kaddr, err, tfp0);
+    printf("tfp69 read failed %s addr: 0x%llx err:%x port:%x\n", mach_error_string(err), kaddr, err, tfp69);
     sleep(3);
     return 0;
   }
   
   if (outsize != sizeof(uint32_t)){
-    printf("tfp0 read was short (expected %lx, got %llx\n", sizeof(uint32_t), outsize);
+    printf("tfp69 read was short (expected %lx, got %llx\n", sizeof(uint32_t), outsize);
     sleep(3);
     return 0;
   }
@@ -119,8 +119,8 @@ uint32_t rk32_via_tfp0(uint64_t kaddr) {
 }
 
 uint32_t rk32(uint64_t kaddr) {
-  if (tfp0 != MACH_PORT_NULL) {
-    return rk32_via_tfp0(kaddr);
+  if (tfp69 != MACH_PORT_NULL) {
+    return rk32_via_tfp69(kaddr);
   }
   
   if (kmem_read_port != MACH_PORT_NULL) {
@@ -141,20 +141,20 @@ uint64_t rk64(uint64_t kaddr) {
 }
 
 void wkbuffer(uint64_t kaddr, void* buffer, uint32_t length) {
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to write to kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return;
   }
   
   kern_return_t err;
-  err = mach_vm_write(tfp0,
+  err = mach_vm_write(tfp69,
                       (mach_vm_address_t)kaddr,
                       (vm_offset_t)buffer,
                       (mach_msg_type_number_t)length);
   
   if (err != KERN_SUCCESS) {
-    printf("tfp0 write failed: %s %x\n", mach_error_string(err), err);
+    printf("tfp69 write failed: %s %x\n", mach_error_string(err), err);
     return;
   }
 }
@@ -163,19 +163,19 @@ void rkbuffer(uint64_t kaddr, void* buffer, uint32_t length) {
   kern_return_t err;
   uint32_t val = 0;
   mach_vm_size_t outsize = 0;
-  err = mach_vm_read_overwrite(tfp0,
+  err = mach_vm_read_overwrite(tfp69,
                                (mach_vm_address_t)kaddr,
                                (mach_vm_size_t)length,
                                (mach_vm_address_t)buffer,
                                &outsize);
   if (err != KERN_SUCCESS){
-    printf("tfp0 read failed %s addr: 0x%llx err:%x port:%x\n", mach_error_string(err), kaddr, err, tfp0);
+    printf("tfp69 read failed %s addr: 0x%llx err:%x port:%x\n", mach_error_string(err), kaddr, err, tfp69);
     sleep(3);
     return;
   }
   
   if (outsize != length){
-    printf("tfp0 read was short (expected %lx, got %llx\n", sizeof(uint32_t), outsize);
+    printf("tfp69 read was short (expected %lx, got %llx\n", sizeof(uint32_t), outsize);
     sleep(3);
     return;
   }
@@ -193,20 +193,20 @@ void kmemcpy(uint64_t dest, uint64_t src, uint32_t length) {
 }
 
 void wk32(uint64_t kaddr, uint32_t val) {
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to write to kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return;
   }
   
   kern_return_t err;
-  err = mach_vm_write(tfp0,
+  err = mach_vm_write(tfp69,
                       (mach_vm_address_t)kaddr,
                       (vm_offset_t)&val,
                       (mach_msg_type_number_t)sizeof(uint32_t));
   
   if (err != KERN_SUCCESS) {
-    printf("tfp0 write failed: %s %x\n", mach_error_string(err), err);
+    printf("tfp69 write failed: %s %x\n", mach_error_string(err), err);
     return;
   }
 }
@@ -219,7 +219,7 @@ void wk64(uint64_t kaddr, uint64_t val) {
 }
 
 uint64_t kmem_alloc(uint64_t size) {
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to allocate kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return 0;
@@ -228,9 +228,9 @@ uint64_t kmem_alloc(uint64_t size) {
   kern_return_t err;
   mach_vm_address_t addr = 0;
   mach_vm_size_t ksize = round_page_kernel(size);
-  err = mach_vm_allocate(tfp0, &addr, ksize, VM_FLAGS_ANYWHERE);
+  err = mach_vm_allocate(tfp69, &addr, ksize, VM_FLAGS_ANYWHERE);
   if (err != KERN_SUCCESS) {
-    printf("unable to allocate kernel memory via tfp0: %s %x\n", mach_error_string(err), err);
+    printf("unable to allocate kernel memory via tfp69: %s %x\n", mach_error_string(err), err);
     sleep(3);
     return 0;
   }
@@ -238,7 +238,7 @@ uint64_t kmem_alloc(uint64_t size) {
 }
 
 uint64_t kmem_alloc_wired(uint64_t size) {
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to allocate kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return 0;
@@ -250,9 +250,9 @@ uint64_t kmem_alloc_wired(uint64_t size) {
   
   printf("vm_kernel_page_size: %lx\n", vm_kernel_page_size);
 
-  err = mach_vm_allocate(tfp0, &addr, ksize+0x4000, VM_FLAGS_ANYWHERE);
+  err = mach_vm_allocate(tfp69, &addr, ksize+0x4000, VM_FLAGS_ANYWHERE);
   if (err != KERN_SUCCESS) {
-    printf("unable to allocate kernel memory via tfp0: %s %x\n", mach_error_string(err), err);
+    printf("unable to allocate kernel memory via tfp69: %s %x\n", mach_error_string(err), err);
     sleep(3);
     return 0;
   }
@@ -264,9 +264,9 @@ uint64_t kmem_alloc_wired(uint64_t size) {
   
   printf("address to wire: %llx\n", addr);
   
-  err = mach_vm_wire(fake_host_priv(), tfp0, addr, ksize, VM_PROT_READ|VM_PROT_WRITE);
+  err = mach_vm_wire(fake_host_priv(), tfp69, addr, ksize, VM_PROT_READ|VM_PROT_WRITE);
   if (err != KERN_SUCCESS) {
-    printf("unable to wire kernel memory via tfp0: %s %x\n", mach_error_string(err), err);
+    printf("unable to wire kernel memory via tfp69: %s %x\n", mach_error_string(err), err);
     sleep(3);
     return 0;
   }
@@ -275,7 +275,7 @@ uint64_t kmem_alloc_wired(uint64_t size) {
 
 void kmem_free(uint64_t kaddr, uint64_t size) {
   return;
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to deallocate kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return;
@@ -283,24 +283,24 @@ void kmem_free(uint64_t kaddr, uint64_t size) {
   
   kern_return_t err;
   mach_vm_size_t ksize = round_page_kernel(size);
-  err = mach_vm_deallocate(tfp0, kaddr, ksize);
+  err = mach_vm_deallocate(tfp69, kaddr, ksize);
   if (err != KERN_SUCCESS) {
-    printf("unable to deallocate kernel memory via tfp0: %s %x\n", mach_error_string(err), err);
+    printf("unable to deallocate kernel memory via tfp69: %s %x\n", mach_error_string(err), err);
     sleep(3);
     return;
   }
 }
 
 void kmem_protect(uint64_t kaddr, uint32_t size, int prot) {
-  if (tfp0 == MACH_PORT_NULL) {
+  if (tfp69 == MACH_PORT_NULL) {
     printf("attempt to change protection of kernel memory before any kernel memory write primitives available\n");
     sleep(3);
     return;
   }
   kern_return_t err;
-  err = mach_vm_protect(tfp0, (mach_vm_address_t)kaddr, (mach_vm_size_t)size, 0, (vm_prot_t)prot);
+  err = mach_vm_protect(tfp69, (mach_vm_address_t)kaddr, (mach_vm_size_t)size, 0, (vm_prot_t)prot);
   if (err != KERN_SUCCESS) {
-    printf("unable to change protection of kernel memory via tfp0: %s %x\n", mach_error_string(err), err);
+    printf("unable to change protection of kernel memory via tfp69: %s %x\n", mach_error_string(err), err);
     sleep(3);
     return;
   }

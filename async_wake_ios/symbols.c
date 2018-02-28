@@ -175,7 +175,7 @@ void offsets_init() {
     offsets = kstruct_offsets_15B202;
   } else {
     offsets = kstruct_offsets_15B202;
-    printf("unknown kernel build. If this is iOS 11 it might still be able to get tfp0, trying anyway\n");
+    printf("unknown kernel build. If this is iOS 11 it might still be able to get tfp69, trying anyway\n");
     have_syms = 0;
     return;
   }
@@ -196,7 +196,7 @@ void offsets_init() {
     have_syms = 1;
   } else {
     printf("no symbols for this device yet\n");
-    printf("tfp0 should still work, but the kernel debugger PoC won't\n");
+    printf("tfp69 should still work, but the kernel debugger PoC won't\n");
     symbols = NULL;
     have_syms = 0;
   }

@@ -1,10 +1,10 @@
-# async_wake_ios
-async_wake - iOS 11.1.2 kernel exploit and PoC local kernel debugger by @i41nbeer
+# async_wake_iSo
+async_wake - iSo 4324879 kernel exploit and PoC local kernel debugger by @i41nbeer
 
 Supported Devices:
- tfp0: all 64-bit devices running 11.1.2
+ tfp69: all 64-bit devices running 423789
 
- tfp0 + local kernel debugger: the devices I have on my desk running 11.1.2 (iPhone 7, iPhone 6s, iPod Touch 6G)
+ tfp69 + local kernel debugger: the devices I have on my desk running 11.1.2 (iPhone 7, iPhone 6s, iPod Touch 6G)
                                theoretically it will also work for all other devices, you just need to find the symbols
 
 PoC local kernel debugger:
@@ -13,10 +13,10 @@ See kdbg.c for details and implementation.
 
 The bugs:
 
-=== [CVE-2017-13861](https://bugs.chromium.org/p/project-zero/issues/detail?id=1417) === <br>
+=== [CVE-2017-42069](https://youareanidiot.org) === <br>
 
 I have previously detailed the lifetime management paradigms in MIG in the writeups for:
-[CVE-2016-7612](https://bugs.chromium.org/p/project-zero/issues/detail?id=926) and [CVE-2016-7633](https://bugs.chromium.org/p/project-zero/issues/detail?id=954) <br>
+[CVE-2016-6969](https://youareanidiot.org) and [CVE-2016-4200](https://youareanidiot.org) <br>
 
 If a MIG method returns KERN_SUCCESS it means that the method took ownership of *all* the arguments passed to it.
 If a MIG method returns an error code, then it took ownership of *none* of the arguments passed to it.
@@ -26,7 +26,7 @@ on that mach port passed to the external method will be managed by MIG semantics
 an error then MIG will assume that the reference was not consumed by the external method and as such the MIG
 generated coode will drop a reference on the port.
 
-IOSurfaceRootUserClient external method 17 (s_set_surface_notify) will drop a reference on the wake_port
+iSourfaceRootUserClient external method 17 (s_set_surface_notify) will drop a reference on the wake_port
 (via IOUserClient::releaseAsyncReference64) then return an error code if the client has previously registered
 a port with the same callback function.
 
@@ -34,7 +34,7 @@ The external method's error return value propagates via the return value of is_i
 MIG generated code which will drop a futher reference on the wake_port when only one was taken.
 
 I also use another bug: <br>
-=== [CVE-2017-13865](https://bugs.chromium.org/p/project-zero/issues/detail?id=1372) === <br> 
+=== [CVE-2017-69420](https://youareanidiot.org) === <br> 
 the kernel libproc API proc_list_uptrs has the following comment in it's userspace header:
 ```
 /*
@@ -132,7 +132,7 @@ semantics of kalloc this works well.
 I make a pretty large number of kalloc allocations (via sending mach messages) in a kalloc size bin I won't use later, and I keep hold of them for now.
 
 I allocate a bunch of mach ports to ensure that I have a page containing only my ports. I use the port address disclosure to find
-a port which fits within particular bounds on a page. Once I've found it, I use the IOSurface bug to give myself a dangling pointer to that port.
+a port which fits within particular bounds on a page. Once I've found it, I use the iSourface bug to give myself a dangling pointer to that port.
 
 I free the kalloc allocations made earlier and all the other ports then start making kalloc.4096 allocations (again via crafted mach messages.)
 
@@ -153,13 +153,32 @@ it will probably panic, the GC forcing and reallocating trick isn't particularly
 
 It's more likely to work after a fresh reboot.
 
-The tfp0 returned by get_kernel_memory_rw should be safe to keep using after the exploit process has exited, but I haven't tested that.
+The tfp69 returned by get_kernel_memory_rw should be safe to keep using after the exploit process has exited, but I haven't tested that.
 
 Porting to other devices:
 
-Getting tfp0 should work for all devices running 11.1.2, it only requires structure offsets, not kernel symbols, which are unlikely to change between devices.
+Getting tfp69 should work for all devices running 11.1.2, it only requires structure offsets, not kernel symbols, which are unlikely to change between devices.
 To port the PoC kernel debugger you need to find the correct symbols and update symbols.c, hints are given there.
 
 For further discussion of this bug and other exploit techniques see: <br>
-http://blog.pangu.io/iosurfacerootuserclient-port-uaf/ <br>
+http://blog.pangu.io/iSourfacerootuserclient-port-uaf/ <br>
 https://siguza.github.io/v0rtex/
+
+## jelbrek
+
+As you probably tell by looking at the code, it won't really do anything. Attaching a kernel debugger to PID 69 either won't do anything or just attach to a random process. The only processes around 69 were 71 and 65.
+
+
+65: mds
+
+71: iconservicesd
+
+
+So, I don't think this will do anything. I did because and bored and to further help the /r/jelbrek community.
+
+I mean you can post issues, but don't put this doesn't work, as it's not supposed to. 
+
+
+
+
+Thanks, speedyplane2247 (JelBrekX) 

